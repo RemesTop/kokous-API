@@ -6,6 +6,7 @@ import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const API_VERSION = '/api/v1';
 
 // Middleware
 app.use(express.json());
@@ -23,9 +24,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Routes
-app.use('/api/v1', apiRouter);
+app.use(API_VERSION, apiRouter);
 
-// Error handler (must be after routes)
+// Error handler
 app.use(errorHandler);
 
 // Initialize DB and Seed
