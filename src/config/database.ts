@@ -4,7 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 const db = new Database(':memory:');
 
 export function initDatabase() {
-    db.exec(`
+  db.exec('PRAGMA foreign_keys = ON;');
+  db.exec(`
     CREATE TABLE IF NOT EXISTS rooms (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -21,7 +22,7 @@ export function initDatabase() {
       FOREIGN KEY (roomId) REFERENCES rooms(id)
     );
   `);
-    console.log('Database initialized (tables created).');
+  console.log('Database initialized (tables created).');
 }
 
 export default db;

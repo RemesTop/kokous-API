@@ -312,3 +312,136 @@ Verifying empty username flaw
 Documenting findings in FLAWS.md
 
 I have analyzed the project and found several flaws, including an idempotency violation, input validation gaps, and structural issues with the database and concurrency handling. I've documented these in FLAWS.md.
+
+## Prompti - Tässä käytetty Claude Opus 4.5 mallia
+Hei, miten testaisin näitä Flaws.md tiedoston kohtia postmanilla? Tahdon ymmärtää niitä itse
+
+## Vastaus
+Hei! Loistava tapa oppia - kokeilemalla itse! Katsotaan ensin myös API:n rakenne, jotta voin antaa tarkat Postman-ohjeet.
+
+Analyzed
+
+bookings.controller.ts
+Error while viewing
+rooms.controller.ts
+Cannot view file outline for
+rooms.controller.ts
+which does not exist.
+Searched
+*
+9 results
+Analyzed
+bookings.routes.ts#L1-16
+Selvä! Nyt näen API:n rakenteen. Tässä ohjeet jokaisen FLAWS.md:n kohdan testaamiseen Postmanilla:
+
+🧪 Postman-testausohjeet
+API pyörii osoitteessa http://localhost:3000/api/v1 (tarkista portti omasta npm run dev -ulostulosta).
+
+1.1 Idempotency Violation in Delete Operation
+Tavoite: Todistaa, että DELETE ei ole idempotentti - sama pyyntö kahdesti tuottaa eri tuloksen.
+
+Vaiheet:
+
+Luo ensin varaus:
+Method: POST
+URL: http://localhost:3000/api/v1/bookings
+Headers: Content-Type: application/json
+Body (raw JSON):
+json
+{
+  "roomId": "room-1",
+  "user": "Testi Käyttäjä",
+  "startTime": "2026-02-02T10:00:00Z",
+  "endTime": "2026-02-02T11:00:00Z"
+}
+Odota vastaus: 201 Created ja id kentässä varauksen ID
+Poista varaus ensimmäisen kerran:
+Method: DELETE
+URL: http://localhost:3000/api/v1/bookings/{id} (korvaa {id} oikealla ID:llä)
+Odota vastaus: 204 No Content ✅
+Poista sama varaus uudelleen:
+Method: DELETE
+URL: sama kuin yllä
+Odota vastaus: 404 Not Found ❌ (Tämä on vika - pitäisi olla 204)
+1.2 Missing Validation for User Name
+Tavoite: Todistaa, että tyhjä käyttäjänimi hyväksytään.
+
+Vaiheet:
+
+Luo varaus tyhjällä käyttäjänimellä:
+Method: POST
+URL: http://localhost:3000/api/v1/bookings
+Headers: Content-Type: application/json
+Body (raw JSON):
+json
+{
+  "roomId": "room-1",
+  "user": "",
+  "startTime": "2026-02-02T12:00:00Z",
+  "endTime": "2026-02-02T13:00:00Z"
+}
+Odota vastaus: 201 Created ❌ (Tämä on vika - pitäisi olla 400 Validation Error)
+2.1 Missing Foreign Key Enforcement
+Tavoite: Todistaa, että varaus voidaan yrittää tehdä olemattomalle huoneelle (service estää, mutta DB ei).
+
+Vaiheet:
+
+Yritä varausta olemattomalle huoneelle:
+Method: POST
+URL: http://localhost:3000/api/v1/bookings
+Body:
+json
+{
+  "roomId": "olematon-huone-xyz",
+  "user": "Testi",
+  "startTime": "2026-02-02T14:00:00Z",
+  "endTime": "2026-02-02T15:00:00Z"
+}
+Odota vastaus: 404 Not Found (Service estää tämän)
+Huom: Tätä vikaa ei voi suoraan testata Postmanilla, koska Service-kerros tarkistaa huoneen. Vika ilmenisi vain suorassa tietokanta-operaatiossa.
+
+2.2 Concurrency / Race Condition Risk
+Tavoite: Demonstroida mahdollista tuplavarausta.
+
+Tämä on vaikea testata Postmanilla, mutta voit kokeilla:
+
+Avaa kaksi Postman-ikkunaa/tabia
+Tee molempiin sama POST-pyyntö samalle ajalle:
+json
+{
+  "roomId": "room-1",
+  "user": "Käyttäjä A",
+  "startTime": "2026-02-02T16:00:00Z",
+  "endTime": "2026-02-02T17:00:00Z"
+}
+Lähetä molemmat mahdollisimman nopeasti
+Huom: SQLite on synkroninen, joten tämä ei todennäköisesti tuota vikaa. Vika ilmenisi asynkronisessa ympäristössä.
+
+2.3 Fragile Error Handling
+Tavoite: Ymmärtää, miten virhekäsittely toimii.
+
+Vaiheet:
+
+Hae varauksia olemattomalle huoneelle:
+Method: GET
+URL: http://localhost:3000/api/v1/rooms/ei-olemassa/bookings
+Odota vastaus: 404 ja viesti sisältää "not found"
+Tämä vika on koodissa - controller etsii error.message.includes('not found'). Jos service muuttaisi viestiä esim. "Room not found" → "Huonetta ei löydy", API palauttaisi 500.
+
+2.4 Time Synchronization
+Tavoite: Todistaa, että "juuri nyt" varaukset voivat epäonnistua.
+
+Vaiheet:
+
+Luo varaus joka alkaa JUURI NYT:
+Method: POST
+URL: http://localhost:3000/api/v1/bookings
+Body: (käytä tämänhetkistä aikaa)
+json
+{
+  "roomId": "room-1",
+  "user": "Testi",
+  "startTime": "2026-02-01T13:19:30Z",
+  "endTime": "2026-02-01T14:00:00Z"
+}
+Jos verkon viive on suuri, pyyntö voi hylätä "menneisyyteen" kuuluvana.
