@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
-import bookingsRouter from './routes/bookings.routes';
+import apiRouter from './routes/api.routes';
 import { initDatabase } from './config/database';
 import { seed } from './scripts/seed';
 import { errorHandler } from './middleware/errorHandler';
@@ -23,7 +23,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Routes
-app.use('/api/v1', bookingsRouter);
+app.use('/api/v1', apiRouter);
 
 // Error handler (must be after routes)
 app.use(errorHandler);
