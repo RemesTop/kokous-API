@@ -41,10 +41,7 @@ export class BookingsService {
         return this.bookingsRepo.findByRoomId(roomId);
     }
 
-    cancelBooking(id: string): void {
-        const deleted = this.bookingsRepo.delete(id);
-        if (!deleted) {
-            throw new Error(`Booking with ID ${id} not found`);
-        }
+    cancelBooking(id: string): boolean {
+        return this.bookingsRepo.delete(id);
     }
 }
