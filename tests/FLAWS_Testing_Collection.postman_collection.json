@@ -1,0 +1,503 @@
+{
+    "info": {
+        "name": "FLAWS Testing Collection",
+        "description": "Postman collection for testing the flaws documented in FLAWS.md for the Meeting Room Booking API.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000/api/v1",
+            "type": "string"
+        },
+        {
+            "key": "bookingId",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "1.1 Idempotency Violation",
+            "description": "Tests that DELETE is NOT idempotent (bug). Expected: both deletes should return 204, but second returns 404.",
+            "item": [
+                {
+                    "name": "Step 1: Create Booking",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// Save the booking ID for later use",
+                                    "if (pm.response.code === 201) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.collectionVariables.set('bookingId', jsonData.id);",
+                                    "    pm.test('Booking created successfully', function() {",
+                                    "        pm.expect(jsonData.id).to.exist;",
+                                    "    });",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"roomId\": \"neukkari-1\",\n  \"user\": \"Idempotency Tester\",\n  \"startTime\": \"2026-02-10T10:00:00Z\",\n  \"endTime\": \"2026-02-10T11:00:00Z\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/bookings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "bookings"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Step 2: Delete Booking (First Time)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('First delete returns 204 No Content', function() {",
+                                    "    pm.expect(pm.response.code).to.equal(204);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/bookings/{{bookingId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "bookings",
+                                "{{bookingId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Step 3: Delete Booking (Second Time - BUG)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// This test EXPECTS the bug to exist",
+                                    "pm.test('BUG: Second delete returns 404 instead of 204', function() {",
+                                    "    pm.expect(pm.response.code).to.equal(404);",
+                                    "});",
+                                    "",
+                                    "// This is what it SHOULD be (will fail while bug exists)",
+                                    "pm.test('FIXED: Should return 204 (idempotent)', function() {",
+                                    "    pm.expect(pm.response.code).to.equal(204);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/bookings/{{bookingId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "bookings",
+                                "{{bookingId}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "1.2 Missing User Validation",
+            "description": "Tests that empty user name is accepted (bug). Expected: should return 400 Validation Error.",
+            "item": [
+                {
+                    "name": "Create Booking with Empty User (BUG)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// This test EXPECTS the bug to exist",
+                                    "pm.test('BUG: Empty user is accepted (returns 201)', function() {",
+                                    "    pm.expect(pm.response.code).to.equal(201);",
+                                    "});",
+                                    "",
+                                    "// This is what it SHOULD be (will fail while bug exists)",
+                                    "pm.test('FIXED: Should return 400 Validation Error', function() {",
+                                    "    pm.expect(pm.response.code).to.equal(400);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"roomId\": \"neukkari-1\",\n  \"user\": \"\",\n  \"startTime\": \"2026-02-10T12:00:00Z\",\n  \"endTime\": \"2026-02-10T13:00:00Z\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/bookings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "bookings"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Booking with Whitespace User",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// Test with whitespace-only user",
+                                    "pm.test('Whitespace user should also be rejected', function() {",
+                                    "    // If 201, the bug exists",
+                                    "    if (pm.response.code === 201) {",
+                                    "        console.log('BUG: Whitespace-only user was accepted');",
+                                    "    }",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"roomId\": \"neukkari-1\",\n  \"user\": \"   \",\n  \"startTime\": \"2026-02-10T14:00:00Z\",\n  \"endTime\": \"2026-02-10T15:00:00Z\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/bookings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "bookings"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2.1 Foreign Key Check",
+            "description": "Tests booking with non-existent room. Service layer blocks this, but DB doesn't enforce FK.",
+            "item": [
+                {
+                    "name": "Create Booking for Non-Existent Room",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Non-existent room returns 404', function() {",
+                                    "    pm.expect(pm.response.code).to.equal(404);",
+                                    "});",
+                                    "",
+                                    "pm.test('Error message mentions room not found', function() {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.error.toLowerCase()).to.include('not found');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"roomId\": \"non-existent-room-xyz\",\n  \"user\": \"FK Tester\",\n  \"startTime\": \"2026-02-10T16:00:00Z\",\n  \"endTime\": \"2026-02-10T17:00:00Z\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/bookings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "bookings"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2.3 Fragile Error Handling",
+            "description": "Tests error handling that relies on string matching.",
+            "item": [
+                {
+                    "name": "Get Bookings for Non-Existent Room",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Returns 404 for non-existent room', function() {",
+                                    "    pm.expect(pm.response.code).to.equal(404);",
+                                    "});",
+                                    "",
+                                    "pm.test('Error message contains not found', function() {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.error.toLowerCase()).to.include('not found');",
+                                    "});",
+                                    "",
+                                    "console.log('Note: This test passes, but the code relies on string matching.');",
+                                    "console.log('If service changes message, this would return 500 instead.');"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/rooms/non-existent-room/bookings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "rooms",
+                                "non-existent-room",
+                                "bookings"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Non-Existent Booking",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Returns 404 for non-existent booking', function() {",
+                                    "    pm.expect(pm.response.code).to.equal(404);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/bookings/non-existent-booking-id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "bookings",
+                                "non-existent-booking-id"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2.4 Time Synchronization",
+            "description": "Tests booking with times very close to 'now'. May fail due to network latency.",
+            "item": [
+                {
+                    "name": "Create Booking Starting Now",
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "// Generate a start time that is 'now' + 1 second",
+                                    "var now = new Date();",
+                                    "var startTime = new Date(now.getTime() + 1000).toISOString();",
+                                    "var endTime = new Date(now.getTime() + 3600000).toISOString(); // +1 hour",
+                                    "",
+                                    "pm.collectionVariables.set('dynamicStartTime', startTime);",
+                                    "pm.collectionVariables.set('dynamicEndTime', endTime);",
+                                    "",
+                                    "console.log('Start time set to: ' + startTime);"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        },
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// This might pass or fail depending on network latency",
+                                    "if (pm.response.code === 201) {",
+                                    "    pm.test('Booking created successfully', function() {",
+                                    "        pm.expect(pm.response.code).to.equal(201);",
+                                    "    });",
+                                    "} else if (pm.response.code === 400) {",
+                                    "    pm.test('Booking rejected as past time (latency issue)', function() {",
+                                    "        var jsonData = pm.response.json();",
+                                    "        console.log('Error: ' + JSON.stringify(jsonData));",
+                                    "    });",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"roomId\": \"neukkari-1\",\n  \"user\": \"Time Sync Tester\",\n  \"startTime\": \"{{dynamicStartTime}}\",\n  \"endTime\": \"{{dynamicEndTime}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/bookings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "bookings"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Booking in the Past",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Past booking is rejected with 400', function() {",
+                                    "    pm.expect(pm.response.code).to.equal(400);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"roomId\": \"neukkari-1\",\n  \"user\": \"Past Tester\",\n  \"startTime\": \"2020-01-01T10:00:00Z\",\n  \"endTime\": \"2020-01-01T11:00:00Z\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/bookings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "bookings"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Helper Requests",
+            "description": "Useful helper requests for testing.",
+            "item": [
+                {
+                    "name": "List All Bookings for Room 1",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/rooms/neukkari-1/bookings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "rooms",
+                                "neukkari-1",
+                                "bookings"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Valid Booking",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"roomId\": \"neukkari-1\",\n  \"user\": \"Test User\",\n  \"startTime\": \"2026-03-01T10:00:00Z\",\n  \"endTime\": \"2026-03-01T11:00:00Z\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/bookings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "bookings"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

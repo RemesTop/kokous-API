@@ -160,7 +160,7 @@ Miksi tämä on hyvä prompt?
     Tietomalli: Määrittelet tarkat sarakkeet ja tyypit (ISO8601 TEXT), kuten suunnitelmassa päätettiin. Tämä estää aikavyöhykesekoilut heti alussa.
 
     Logiikka: Prompti sisältää kriittisen kaavan päällekkäisyyksien tarkistamiseen: (NewStart < ExistingEnd) AND (NewEnd > ExistingStart). Tämä on yleisin kohta, jossa tekoäly tekee virheen (se tarkistaa usein vain onko aloitusaika varauksen sisällä), joten annoimme sille valmiin kaavan.
-    
+
 
 ## Prompti - Tässä käytetty Antigravity IDE:ä ja Gemini 3 Pro (high) mallia
 Act as my Junior Pair Programmer. I will act as the Lead Developer.
@@ -275,3 +275,40 @@ Creating verification script and running tests
 Documenting verification results and completing task
 
 I have completed the implementation of the Meeting Room Booking API. The server is up and running, and I've verified the functionality/endpoints including the overlap logic
+
+## Tässä vaiheessa projekti pyörii ja rakennetut testit läpäisevät
+
+## Prompti
+I want to test and analyze this project. The AI built tests pass but that does not necessarily mean everything works. Help me look for flaws in the project. I can use Postman for testing
+
+## Vastaus
+Researching Project & Flaw Detection
+Verified all potential flaws. Creating FLAWS.md to document the found issues: idempotent delete violation, empty user validation, and architectural weaknesses regarding foreign keys and concurrency.
+
+Files Edited
+FLAWS.md
+verify_empty_user.ts
+analyze_flaws.ts
+Progress Updates
+1
+Reading documentation and project structure
+
+2
+Inspecting implementation files for logic verification
+
+3
+Inspecting schema and controller files
+
+4
+Checking verification script
+
+5
+Creating and running analyze_flaws.ts
+
+6
+Verifying empty username flaw
+
+7
+Documenting findings in FLAWS.md
+
+I have analyzed the project and found several flaws, including an idempotency violation, input validation gaps, and structural issues with the database and concurrency handling. I've documented these in FLAWS.md.
