@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const CreateBookingSchema = z.object({
-    roomId: z.string(),
+    roomId: z.string().min(1, "Room ID is required"),
     user: z.string({ required_error: "User is required" })
         .min(1, "User cannot be empty")
         .trim()
