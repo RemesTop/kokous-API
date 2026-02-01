@@ -23,6 +23,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
 });
 
+// Health check (for load balancers and monitoring)
+app.get('/health', (req: Request, res: Response) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Routes
 app.use(API_VERSION, apiRouter);
 
