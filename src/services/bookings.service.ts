@@ -42,7 +42,7 @@ export class BookingsService {
     getBookingsForRoom(roomId: string): Booking[] {
         const room = this.roomsRepo.findById(roomId);
         if (!room) {
-            throw new Error(`Room with ID ${roomId} not found`);
+            throw new NotFoundError(`Room with ID ${roomId} not found`);
         }
         return this.bookingsRepo.findByRoomId(roomId);
     }

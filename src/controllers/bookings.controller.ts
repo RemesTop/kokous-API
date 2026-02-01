@@ -39,7 +39,7 @@ export class BookingsController {
             const bookings = bookingService.getBookingsForRoom(id);
             res.json(bookings);
         } catch (error: any) {
-            if (error.message.includes('not found')) {
+            if (error instanceof NotFoundError) {
                 res.status(404).json({ error: error.message });
             } else {
                 res.status(500).json({ error: 'Internal Server Error' });
@@ -53,7 +53,7 @@ export class BookingsController {
             bookingService.cancelBooking(id);
             res.status(204).send();
         } catch (error: any) {
-            if (error.message.includes('not found')) {
+            if (error instanceof NotFoundError) {
                 res.status(404).json({ error: error.message });
             } else {
                 res.status(500).json({ error: 'Internal Server Error' });

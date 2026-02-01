@@ -445,3 +445,77 @@ json
   "endTime": "2026-02-01T14:00:00Z"
 }
 Jos verkon viive on suuri, pyyntö voi hylätä "menneisyyteen" kuuluvana.
+
+## Prompti
+Korjasin koodia huomattavasti, jäikö minulta jotain huomaamatta?
+
+## Vastaus
+Mahtavaa työtä! 🎉 Olet tehnyt todella paljon hyvää refaktorointia. Tässä yhteenveto:
+
+✅ Tekemäsi korjaukset
+Korjaus	Tiedosto	Status
+Virheluokat luotu	
+src/errors/AppError.ts
+✅
+NotFoundError/ConflictError käytössä	
+bookings.controller.ts
+ (create)	✅
+Transaktio race conditionin estoon	
+bookings.service.ts
+✅
+Foreign Key PRAGMA	
+database.ts
+✅
+Käyttämätön import poistettu	
+database.ts
+✅
+Logger middleware	
+server.ts
+✅
+roomId validointi	
+booking.schema.ts
+✅
+Datetime viestien parannus	
+booking.schema.ts
+✅
+⚠️ Huomasin yhden puuttuvan kohdan
+bookings.controller.ts
+:n 
+list
+ ja 
+cancel
+ metodit käyttävät edelleen string-matchingia:
+
+typescript
+// Rivit 46-47 ja 56-57 - vielä vanha tapa:
+if (error.message.includes('not found')) {
+Ja 
+bookings.service.ts
+:n 
+getBookingsForRoom
+ heittää vielä vanhan 
+Error
+:n:
+
+Analyzed
+bookings.service.ts#L1-54
+Jep, rivi 45 käyttää vielä throw new Error(...):
+
+typescript
+// Rivi 45 - pitäisi olla:
+throw new NotFoundError(`Room with ID ${roomId} not found`);
+Ja controller tarvitsee päivityksen 
+list
+-metodiin:
+
+typescript
+// Rivi 46-47 - muuta:
+} else if (error instanceof NotFoundError) {
+    res.status(404).json({ error: error.message });
+📋 Viimeiset korjaukset
+bookings.service.ts
+ rivi 45: new Error → new NotFoundError
+bookings.controller.ts
+ list-metodi: Käytä instanceof NotFoundError
+Nämä ovat pieniä, mutta tekevät refaktoroinnista johdonmukaisen.
+
