@@ -1,6 +1,8 @@
 import { BookingsRepository } from '../repositories/bookings.repository';
 import { RoomsRepository } from '../repositories/rooms.repository';
 import { CreateBookingDTO, Booking } from '../schemas/booking.schema';
+import db from '../config/database';
+import { NotFoundError, ConflictError } from '../errors/AppError';
 
 export class BookingsService {
     private bookingsRepo: BookingsRepository;
@@ -12,25 +14,29 @@ export class BookingsService {
     }
 
     createBooking(data: CreateBookingDTO): Booking {
-        // 1. Check if room exists
-        const room = this.roomsRepo.findById(data.roomId);
-        if (!room) {
-            throw new Error(`Room with ID ${data.roomId} not found`);
-        }
+        const runTransaction = db.transaction(() => {
 
-        // 2. Check for overlaps
-        const overlaps = this.bookingsRepo.findOverlapping(
-            data.roomId,
-            data.startTime,
-            data.endTime
-        );
+            // Check if room exists
+            const room = this.roomsRepo.findById(data.roomId);
+            if (!room) {
+                throw new NotFoundError(`Room with ID ${data.roomId} not found`);
+            }
 
-        if (overlaps.length > 0) {
-            throw new Error('Booking overlaps with an existing booking');
-        }
+            // Check for overlaps
+            const overlaps = this.bookingsRepo.findOverlapping(
+                data.roomId,
+                data.startTime,
+                data.endTime
+            );
 
-        // 3. Create booking
-        return this.bookingsRepo.create(data);
+            if (overlaps.length > 0) {
+                throw new ConflictError('Booking overlaps with an existing booking');
+            }
+
+            // Create booking
+            return this.bookingsRepo.create(data);
+        });
+        return runTransaction();
     }
 
     getBookingsForRoom(roomId: string): Booking[] {
