@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { BookingsService } from '../services/bookings.service';
 import { CreateBookingSchema } from '../schemas/booking.schema';
 import { z } from 'zod';
+import { NotFoundError, ConflictError } from '../errors/AppError';
 
 const bookingService = new BookingsService();
 
@@ -17,12 +18,17 @@ export class BookingsController {
         } catch (error: any) {
             if (error instanceof z.ZodError) {
                 res.status(400).json({ error: 'Validation Error', details: error.errors });
-            } else if (error.message.includes('not found')) {
+
+                // Custom errors
+            } else if (error instanceof NotFoundError) {
                 res.status(404).json({ error: error.message });
-            } else if (error.message.includes('overlaps')) {
+            } else if (error instanceof ConflictError) {
                 res.status(409).json({ error: error.message });
+
+                // Unexpected errors
             } else {
-                res.status(500).json({ error: 'Internal Server Error', details: error.message });
+                console.error(error); // Hyvä tapa logata oikea virhe palvelimelle
+                res.status(500).json({ error: 'Internal Server Error' });
             }
         }
     }
