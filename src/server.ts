@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express'; // Lisää tyypit
 import bookingsRouter from './routes/bookings.routes';
 import { initDatabase } from './config/database';
 import { seed } from './scripts/seed';
@@ -8,6 +8,19 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
+// logger middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+    const start = Date.now();
+
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const timestamp = new Date().toISOString();
+        // Prints: Aika Metodi Url Status - Kesto
+        console.log(`[${timestamp}] ${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
+    });
+
+    next();
+});
 
 // Routes
 app.use('/api/v1', bookingsRouter);
