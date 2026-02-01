@@ -4,6 +4,9 @@ import { z } from 'zod';
 export { Booking, CreateBookingDTO } from '../types';
 export { Room } from '../types';
 
+// UUID validation schema for path parameters
+export const UUIDSchema = z.string().uuid("Invalid ID format - must be a valid UUID");
+
 export const CreateBookingSchema = z.object({
     roomId: z.string().min(1, "Room ID is required"),
     user: z.string({ required_error: "User is required" })
@@ -27,4 +30,3 @@ export const CreateBookingSchema = z.object({
     message: "startTime cannot be in the past",
     path: ["startTime"]
 });
-
