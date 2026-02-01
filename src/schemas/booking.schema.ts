@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+// Re-export types for backward compatibility
+export { Booking, CreateBookingDTO } from '../types';
+export { Room } from '../types';
+
 export const CreateBookingSchema = z.object({
     roomId: z.string().min(1, "Room ID is required"),
     user: z.string({ required_error: "User is required" })
@@ -14,7 +18,7 @@ export const CreateBookingSchema = z.object({
     return start < end;
 }, {
     message: "startTime must be before endTime",
-    path: ["startTime"] // Attach error to startTime
+    path: ["startTime"]
 }).refine((data) => {
     const start = new Date(data.startTime);
     const now = new Date();
@@ -24,19 +28,3 @@ export const CreateBookingSchema = z.object({
     path: ["startTime"]
 });
 
-export type CreateBookingDTO = z.infer<typeof CreateBookingSchema>;
-
-export interface Room {
-    id: string;
-    name: string;
-    capacity: number;
-}
-
-export interface Booking {
-    id: string;
-    roomId: string;
-    user: string;
-    startTime: string;
-    endTime: string;
-    createdAt: string;
-}
