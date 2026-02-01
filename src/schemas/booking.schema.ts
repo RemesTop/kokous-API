@@ -6,8 +6,8 @@ export const CreateBookingSchema = z.object({
         .min(1, "User cannot be empty")
         .trim()
         .min(1, "User cannot be only whitespace"),
-    startTime: z.string().datetime({ message: "Invalid ISO8601 startTime" }),
-    endTime: z.string().datetime({ message: "Invalid ISO8601 endTime" })
+    startTime: z.string().datetime({ offset: true, message: "Use ISO 8601 format with timezone (e.g. 2026-06-01T10:00:00Z)" }),
+    endTime: z.string().datetime({ offset: true, message: "Use ISO 8601 format with timezone" }),
 }).refine((data) => {
     const start = new Date(data.startTime);
     const end = new Date(data.endTime);
