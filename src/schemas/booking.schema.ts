@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 export const CreateBookingSchema = z.object({
     roomId: z.string(),
-    user: z.string({ required_error: "User is required" }),
+    user: z.string({ required_error: "User is required" })
+        .min(1, "User cannot be empty")
+        .trim()
+        .min(1, "User cannot be only whitespace"),
     startTime: z.string().datetime({ message: "Invalid ISO8601 startTime" }),
     endTime: z.string().datetime({ message: "Invalid ISO8601 endTime" })
 }).refine((data) => {
